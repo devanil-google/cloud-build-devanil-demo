@@ -71,7 +71,6 @@ steps:
           -e CONNECTOR_ID="$_CONNECTOR_ID" \
           -e BUILD_TAG="$_BUILD_TAG" \
           -e BUILD_ID="$BUILD_ID" \
-          -e IMAGE_DIGEST="$_IMAGE_DIGEST" \
           -e GCP_ACCESS_TOKEN="$(cat /workspace/gcp_token.txt)" \
           "$_SCANNER_IMAGE" || exit_code=$?
         
@@ -86,7 +85,7 @@ steps:
 substitutions:
   _IMAGE_NAME_TO_SCAN: 'alpine'
   _ORGANIZATION_ID: '714470867684'
-  _CONNECTOR_ID: 'connector-id-3'
+  _CONNECTOR_ID: 'aaa-test'
   _SCANNER_IMAGE: 'gcr.io/ci-plugin/cloud-build-integration:latest'
   _IMAGE_TAG: 'latest'
   _IMAGE_DIGEST: 'sha256:b0c6491f5ba0dff4c919008f5ab48db97315676136c21796e41fb6326e88d02a'
