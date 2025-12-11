@@ -9,13 +9,13 @@ steps:
         echo "Starting token generation..."
         gcloud auth print-access-token > /workspace/gcp_token.txt
         if [ $? -eq 0 ]; then
-          echo "Token generated successfully."
+          echo "✅ Token generated successfully."
         else
-          echo "Failed to generate token." >&2
+          echo "❌ Failed to generate token." >&2
           exit 1
         fi
 
-  # Step 2: Build the image locally
+  # Step 2: Build the Docker image locally
   - name: 'gcr.io/cloud-builders/docker'
     id: 'Build Image'
     entrypoint: 'bash'
@@ -25,14 +25,13 @@ steps:
     args:
       - '-c'
       - |
-        echo "🚧 Building Docker image from source code..."
-        echo "Image: ${_IMAGE_NAME_TO_SCAN}:${_IMAGE_TAG}"
+        echo "🚧 Building Docker image: ${_IMAGE_NAME_TO_SCAN}:${_IMAGE_TAG}..."
         docker build -t ${_IMAGE_NAME_TO_SCAN}:${_IMAGE_TAG} .
         if [ $? -ne 0 ]; then
           echo "❌ Docker build failed."
           exit 1
         fi
-        echo "✅ Docker image built successfully: ${_IMAGE_NAME_TO_SCAN}:${_IMAGE_TAG}"
+        echo "✅ Docker image built successfully."
     volumes:
       - name: 'docker-socket'
         path: /var/run/docker.sock
@@ -52,7 +51,7 @@ steps:
     args:
       - '-c'
       - |
-        echo "Starting image scan with scanner: ${_SCANNER_IMAGE}"
+        echo "Starting image scan for: ${_IMAGE_NAME_TO_SCAN}:${_IMAGE_TAG}"
         exit_code=0
         docker run --rm \
           -v /var/run/docker.sock:/var/run/docker.sock \
@@ -68,7 +67,7 @@ steps:
           "${_SCANNER_IMAGE}" || exit_code=$?
         echo "Docker run finished with exit code: $exit_code"
         if [ $exit_code -eq 0 ]; then
-          echo "✅ Evaluation succeeded: Conformant image."
+          echo "✅ Scan succeeded: Conformant image."
         elif [ $exit_code -eq 1 ]; then
           echo "❌ Scan failed: Non-conformant image."
           exit 1
@@ -107,12 +106,7 @@ steps:
     args:
       - '-c'
       - |
-        echo "Substitutions:"
-        echo "_IMAGE_NAME_TO_SCAN=${_IMAGE_NAME_TO_SCAN}"
-        echo "_IMAGE_TAG=${_IMAGE_TAG}"
-        echo "_PROJECT_ID=${_PROJECT_ID}"
-        echo "_AR_REPOSITORY=${_AR_REPOSITORY}"
-
+        echo "📦 Preparing to push image to Artifact Registry..."
         _LOCAL_IMAGE="${_IMAGE_NAME_TO_SCAN}:${_IMAGE_TAG}"
         _FULL_AR_TAG="us-east1-docker.pkg.dev/${_PROJECT_ID}/${_AR_REPOSITORY}/${_IMAGE_NAME_TO_SCAN}:${_IMAGE_TAG}"
 
@@ -142,6 +136,3 @@ serviceAccount: "projects/hcp-tf-test-bhargavi/serviceAccounts/461255015551-comp
 
 options:
   logging: CLOUD_LOGGING_ONLY
-  volumes:
-    - name: 'docker-socket'
-      path: /var/run/docker.sock
