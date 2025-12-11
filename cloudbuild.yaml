@@ -1,3 +1,8 @@
+# In your cloudbuild.yaml
 steps:
   - name: 'alpine'
-    args: ['echo', 'Cloud Build Trigger Works.']
+    args: ['echo', 'Logs are streamed only to Cloud Logging.']
+
+# ADD THIS:
+options:
+  logging: CLOUD_LOGGING_ONLY
