@@ -1,6 +1,7 @@
 steps:
+  # step - 1 : Generate auth token and pass it to the docker isolated container.
   - name: 'gcr.io/cloud-builders/gcloud'
-    id: 'Generate Token - Auth testing'
+    id: 'Generate Token.'
     entrypoint: 'bash'
     args:
       - '-c'
@@ -14,6 +15,7 @@ steps:
           exit 1
         fi
 
+  # step - 2 : Build the image locally.
   - name: 'gcr.io/cloud-builders/docker'
     id: 'Build Image'
     entrypoint: 'bash'
@@ -28,19 +30,19 @@ steps:
         fi
         echo "✅ Docker image built successfully: built-image:${_IMAGE_TAG}"
 
-  # Step 2: Authenticate with Google Cloud using the generated token
-  - name: 'gcr.io/cloud-builders/gcloud'
-    id: 'Authenticate With Google Cloud'
-    entrypoint: 'bash'
-    args:
-      - '-c'
-      - |
-        echo "Activating service account with token..."
-        # Ensure the access token is available in the environment
-        export GCP_ACCESS_TOKEN=$(cat /workspace/gcp_token.txt)
-        echo "Access token ready for use in subsequent steps."
+  # # Step : Authenticate with Google Cloud using the generated token
+  # - name: 'gcr.io/cloud-builders/gcloud'
+  #   id: 'Authenticate With Google Cloud'
+  #   entrypoint: 'bash'
+  #   args:
+  #     - '-c'
+  #     - |
+  #       echo "Activating service account with token..."
+  #       # Ensure the access token is available in the environment
+  #       export GCP_ACCESS_TOKEN=$(cat /workspace/gcp_token.txt)
+  #       echo "Access token ready for use in subsequent steps."
 
-  # Step 3: Image Analysis - Docker Scan or other processing
+  # Step 3: Image scan for vulnerabilities.
   - id: 'Image-Analysis'
     name: '$_SCANNER_IMAGE'
     entrypoint: 'bash'
@@ -82,7 +84,7 @@ steps:
 substitutions:
   _IMAGE_NAME_TO_SCAN: 'alpine'
   _ORGANIZATION_ID: '714470867684'
-  _CONNECTOR_ID: 'aaa-test'
+  _CONNECTOR_ID: 'cloudbuild-demo'
   _SCANNER_IMAGE: 'gcr.io/ci-plugin/cloud-build-integration:latest'
   _IMAGE_TAG: 'latest'
   _IMAGE_DIGEST: 'sha256:b0c6491f5ba0dff4c919008f5ab48db97315676136c21796e41fb6326e88d02a'
