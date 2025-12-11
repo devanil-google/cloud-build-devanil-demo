@@ -30,18 +30,6 @@ steps:
         fi
         echo "✅ Docker image built successfully: built-image:${_IMAGE_TAG}"
 
-  # # Step : Authenticate with Google Cloud using the generated token
-  # - name: 'gcr.io/cloud-builders/gcloud'
-  #   id: 'Authenticate With Google Cloud'
-  #   entrypoint: 'bash'
-  #   args:
-  #     - '-c'
-  #     - |
-  #       echo "Activating service account with token..."
-  #       # Ensure the access token is available in the environment
-  #       export GCP_ACCESS_TOKEN=$(cat /workspace/gcp_token.txt)
-  #       echo "Access token ready for use in subsequent steps."
-
   # Step 3: Image scan for vulnerabilities.
   - id: 'Image-Analysis'
     name: '$_SCANNER_IMAGE'
@@ -74,12 +62,19 @@ steps:
           "$_SCANNER_IMAGE" || exit_code=$?
         
         echo "Docker run finished with exit code: $exit_code"
-        if [ $exit_code -eq 0 ]; then
-          echo "Image scan completed successfully."
-        else
-          echo "Image scan failed with exit code $exit_code." >&2
-          exit 1
-        fi
+          if [ $exit_code -eq 0 ]; then
+            echo "✅ Evaluation succeeded: Conformant image."
+          elif [ $exit_code -eq 1 ]; then
+            echo "❌ Scan failed: Non-conformant image (vulnerabilities found)."
+            exit 1 # Fail the step
+          else
+            if [ "$IGNORE_ERRORS" = "true" ]; then
+              echo "⚠️ Server/internal error occurred (Code: $exit_code), but IGNORE_SERVER_ERRORS=true. Proceeding."
+            else
+              echo "❌ Server/internal error occurred (Code: $exit_code) during evaluation. Set IGNORE_SERVER_ERRORS=true to override."
+              exit 1 # Fail the step
+            fi
+          fi
 
 substitutions:
   _IMAGE_NAME_TO_SCAN: 'alpine'
@@ -91,7 +86,6 @@ substitutions:
   _TRIGGER_ID: 'cloud-build-job'
   _PROJECT_ID: 'hcp-tf-test-bhargavi'
   
-
 serviceAccount: "projects/hcp-tf-test-bhargavi/serviceAccounts/461255015551-compute@developer.gserviceaccount.com"
 options:
   logging: CLOUD_LOGGING_ONLY  # Logs only in Cloud Logging, no GCS bucket needed
