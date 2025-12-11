@@ -77,6 +77,31 @@ steps:
             fi
           fi
 
+          
+  # Step 4: Push image to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'Push Image to Artifact Registry'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "📦 Preparing to push image to Artifact Registry..."
+
+        LOCAL_IMAGE_NAME="${_IMAGE_NAME_TO_SCAN}:${_IMAGE_TAG}"
+        FULL_AR_TAG="us-east1-docker.pkg.dev/${_PROJECT_ID}/${_AR_REPOSITORY}/${_IMAGE_NAME_TO_SCAN}:${_IMAGE_TAG}"
+
+        echo "Tagging local image ${LOCAL_IMAGE_NAME} as ${FULL_AR_TAG}"
+        docker tag "${LOCAL_IMAGE_NAME}" "${FULL_AR_TAG}"
+
+        echo "🔐 Authenticating Docker to Artifact Registry..."
+        gcloud auth configure-docker us-east1-docker.pkg.dev -q
+
+        echo "🚀 Pushing ${FULL_AR_TAG} to Artifact Registry..."
+        docker push "${FULL_AR_TAG}"
+
+        echo "✅ Image pushed successfully to Artifact Registry."
+
+
 substitutions:
   _IMAGE_NAME_TO_SCAN: 'alpine'
   _ORGANIZATION_ID: '714470867684'
@@ -86,6 +111,7 @@ substitutions:
   _IMAGE_DIGEST: 'sha256:b0c6491f5ba0dff4c919008f5ab48db97315676136c21796e41fb6326e88d02a'
   _TRIGGER_ID: 'cloud-build-job'
   _PROJECT_ID: 'hcp-tf-test-bhargavi'
+  _AR_REPOSITORY: 'vulnerability-scanning'
   _IGNORE_ERRORS: "false"
   
 serviceAccount: "projects/hcp-tf-test-bhargavi/serviceAccounts/461255015551-compute@developer.gserviceaccount.com"
