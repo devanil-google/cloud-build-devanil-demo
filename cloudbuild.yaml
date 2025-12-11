@@ -19,28 +19,41 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     id: 'Build Image'
     entrypoint: 'bash'
+    env:
+      - _IMAGE_NAME_TO_SCAN=${_IMAGE_NAME_TO_SCAN}
+      - _IMAGE_TAG=${_IMAGE_TAG}
     args:
       - '-c'
       - |
         echo "🚧 Building Docker image from source code..."
+        echo "Image: ${_IMAGE_NAME_TO_SCAN}:${_IMAGE_TAG}"
         docker build -t ${_IMAGE_NAME_TO_SCAN}:${_IMAGE_TAG} .
         if [ $? -ne 0 ]; then
           echo "❌ Docker build failed."
           exit 1
         fi
         echo "✅ Docker image built successfully: ${_IMAGE_NAME_TO_SCAN}:${_IMAGE_TAG}"
+    volumes:
+      - name: 'docker-socket'
+        path: /var/run/docker.sock
 
   # Step 3: Image scan for vulnerabilities
   - id: 'Image-Analysis'
     name: '${_SCANNER_IMAGE}'
     entrypoint: 'bash'
+    env:
+      - _IMAGE_NAME_TO_SCAN=${_IMAGE_NAME_TO_SCAN}
+      - _IMAGE_TAG=${_IMAGE_TAG}
+      - _PROJECT_ID=${_PROJECT_ID}
+      - _ORGANIZATION_ID=${_ORGANIZATION_ID}
+      - _CONNECTOR_ID=${_CONNECTOR_ID}
+      - _TRIGGER_ID=${_TRIGGER_ID}
+      - _IGNORE_ERRORS=${_IGNORE_ERRORS}
     args:
       - '-c'
       - |
         echo "Starting image scan with scanner: ${_SCANNER_IMAGE}"
-
         exit_code=0
-
         docker run --rm \
           -v /var/run/docker.sock:/var/run/docker.sock \
           -v /workspace:/workspace \
@@ -53,9 +66,7 @@ steps:
           -e IGNORE_ERRORS="${_IGNORE_ERRORS}" \
           -e GCP_ACCESS_TOKEN="$(cat /workspace/gcp_token.txt)" \
           "${_SCANNER_IMAGE}" || exit_code=$?
-
         echo "Docker run finished with exit code: $exit_code"
-
         if [ $exit_code -eq 0 ]; then
           echo "✅ Evaluation succeeded: Conformant image."
         elif [ $exit_code -eq 1 ]; then
@@ -69,6 +80,9 @@ steps:
             exit 1
           fi
         fi
+    volumes:
+      - name: 'docker-socket'
+        path: /var/run/docker.sock
 
   # Step 4: Configure Docker authentication for Artifact Registry
   - name: 'gcr.io/cloud-builders/gcloud'
@@ -85,10 +99,14 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     id: 'Push Image to Artifact Registry'
     entrypoint: 'bash'
+    env:
+      - _IMAGE_NAME_TO_SCAN=${_IMAGE_NAME_TO_SCAN}
+      - _IMAGE_TAG=${_IMAGE_TAG}
+      - _PROJECT_ID=${_PROJECT_ID}
+      - _AR_REPOSITORY=${_AR_REPOSITORY}
     args:
       - '-c'
       - |
-        # Debug: show all variables
         echo "Substitutions:"
         echo "_IMAGE_NAME_TO_SCAN=${_IMAGE_NAME_TO_SCAN}"
         echo "_IMAGE_TAG=${_IMAGE_TAG}"
@@ -103,8 +121,10 @@ steps:
 
         echo "🚀 Pushing $_FULL_AR_TAG..."
         docker push "$_FULL_AR_TAG"
-
         echo "✅ Image pushed successfully."
+    volumes:
+      - name: 'docker-socket'
+        path: /var/run/docker.sock
 
 substitutions:
   _IMAGE_NAME_TO_SCAN: 'alpine'
@@ -122,3 +142,6 @@ serviceAccount: "projects/hcp-tf-test-bhargavi/serviceAccounts/461255015551-comp
 
 options:
   logging: CLOUD_LOGGING_ONLY
+  volumes:
+    - name: 'docker-socket'
+      path: /var/run/docker.sock
