@@ -88,10 +88,7 @@ steps:
     args:
       - '-c'
       - |
-        # _LOCAL_IMAGE="${_IMAGE_NAME_TO_SCAN}:${_IMAGE_TAG}"
-        # _FULL_AR_TAG="us-east1-docker.pkg.dev/${_PROJECT_ID}/${_AR_REPOSITORY}/${_IMAGE_NAME_TO_SCAN}:${_IMAGE_TAG}"
 
-        # echo "Tagging local image $_LOCAL_IMAGE as $_FULL_AR_TAG"
         docker tag "${_IMAGE_NAME_TO_SCAN}:${_IMAGE_TAG}" "us-east1-docker.pkg.dev/${_PROJECT_ID}/${_AR_REPOSITORY}/${_IMAGE_NAME_TO_SCAN}:${_IMAGE_TAG}"
         
         echo "🚀 Pushing $_FULL_AR_TAG..."
@@ -100,7 +97,7 @@ steps:
         echo "✅ Image pushed successfully."
 
 substitutions:
-  _IMAGE_NAME_TO_SCAN: 'alpine'
+  _IMAGE_NAME_TO_SCAN: 'cloudbuild-local-image'
   _ORGANIZATION_ID: '714470867684'
   _CONNECTOR_ID: 'cloudbuild-demo'
   _SCANNER_IMAGE: 'gcr.io/ci-plugin/cloud-build-integration:latest'
