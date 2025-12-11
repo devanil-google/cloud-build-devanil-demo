@@ -70,23 +70,29 @@ steps:
           fi
         fi
 
-  # Step 4: Push image to Artifact Registry
+  # Step 4: Configure Docker authentication for Artifact Registry
   - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'Configure Docker Auth'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "🔐 Configuring Docker authentication for Artifact Registry..."
+        gcloud auth configure-docker us-east1-docker.pkg.dev -q
+        echo "✅ Docker authentication configured."
+
+  # Step 5: Push image to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
     id: 'Push Image to Artifact Registry'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
-        echo "📦 Preparing to push image to Artifact Registry..."
-
         _LOCAL_IMAGE="${_IMAGE_NAME_TO_SCAN}:${_IMAGE_TAG}"
         _FULL_AR_TAG="us-east1-docker.pkg.dev/${_PROJECT_ID}/${_AR_REPOSITORY}/${_IMAGE_NAME_TO_SCAN}:${_IMAGE_TAG}"
 
         echo "Tagging local image $_LOCAL_IMAGE as $_FULL_AR_TAG"
         docker tag "$_LOCAL_IMAGE" "$_FULL_AR_TAG"
-
-        echo "🔐 Authenticating Docker to Artifact Registry..."
-        gcloud auth configure-docker us-east1-docker.pkg.dev -q
 
         echo "🚀 Pushing $_FULL_AR_TAG..."
         docker push "$_FULL_AR_TAG"
