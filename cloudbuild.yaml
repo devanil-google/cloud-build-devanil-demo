@@ -85,7 +85,7 @@ steps:
 
 substitutions:
   _IMAGE_NAME_TO_SCAN: 'alpine'
-  _ORGANIZATION_ID: '978806944881'
+  _ORGANIZATION_ID: '714470867684'
   _CONNECTOR_ID: 'connector-id-3'
   _SCANNER_IMAGE: 'gcr.io/ci-plugin/cloud-build-integration:latest'
   _IMAGE_TAG: 'latest'
