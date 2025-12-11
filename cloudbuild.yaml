@@ -32,11 +32,8 @@ steps:
           exit 1
         fi
         echo "✅ Docker image built successfully."
-    volumes:
-      - name: 'docker-socket'
-        path: /var/run/docker.sock
 
-  # Step 3: Image scan for vulnerabilities
+  # Step 3: Image scan
   - id: 'Image-Analysis'
     name: '${_SCANNER_IMAGE}'
     entrypoint: 'bash'
@@ -54,7 +51,6 @@ steps:
         echo "Starting image scan for: ${_IMAGE_NAME_TO_SCAN}:${_IMAGE_TAG}"
         exit_code=0
         docker run --rm \
-          -v /var/run/docker.sock:/var/run/docker.sock \
           -v /workspace:/workspace \
           -e GCP_PROJECT_ID="${_PROJECT_ID}" \
           -e ORGANIZATION_ID="${_ORGANIZATION_ID}" \
@@ -67,7 +63,7 @@ steps:
           "${_SCANNER_IMAGE}" || exit_code=$?
         echo "Docker run finished with exit code: $exit_code"
         if [ $exit_code -eq 0 ]; then
-          echo "✅ Scan succeeded: Conformant image."
+          echo "✅ Scan succeeded."
         elif [ $exit_code -eq 1 ]; then
           echo "❌ Scan failed: Non-conformant image."
           exit 1
@@ -79,9 +75,6 @@ steps:
             exit 1
           fi
         fi
-    volumes:
-      - name: 'docker-socket'
-        path: /var/run/docker.sock
 
   # Step 4: Configure Docker authentication for Artifact Registry
   - name: 'gcr.io/cloud-builders/gcloud'
@@ -96,7 +89,7 @@ steps:
 
   # Step 5: Push image to Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
-    id: 'Push Image to Artifact Registry'
+    id: 'Push Image'
     entrypoint: 'bash'
     env:
       - _IMAGE_NAME_TO_SCAN=${_IMAGE_NAME_TO_SCAN}
@@ -106,7 +99,7 @@ steps:
     args:
       - '-c'
       - |
-        echo "📦 Preparing to push image to Artifact Registry..."
+        echo "📦 Preparing to push image..."
         _LOCAL_IMAGE="${_IMAGE_NAME_TO_SCAN}:${_IMAGE_TAG}"
         _FULL_AR_TAG="us-east1-docker.pkg.dev/${_PROJECT_ID}/${_AR_REPOSITORY}/${_IMAGE_NAME_TO_SCAN}:${_IMAGE_TAG}"
 
@@ -116,9 +109,6 @@ steps:
         echo "🚀 Pushing $_FULL_AR_TAG..."
         docker push "$_FULL_AR_TAG"
         echo "✅ Image pushed successfully."
-    volumes:
-      - name: 'docker-socket'
-        path: /var/run/docker.sock
 
 substitutions:
   _IMAGE_NAME_TO_SCAN: 'alpine'
