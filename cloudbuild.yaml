@@ -1,5 +1,5 @@
 steps:
-  # Step 1: Generate auth token
+  # Step 1: Generate auth token.
   - name: 'gcr.io/cloud-builders/gcloud'
     id: 'Generate Token'
     entrypoint: 'bash'
