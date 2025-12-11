@@ -54,8 +54,6 @@ steps:
         echo "IMAGE_NAME_TO_SCAN: ${_IMAGE_NAME_TO_SCAN}"
         echo "IMAGE_TAG: ${_IMAGE_TAG}"
         echo "CONNECTOR_ID: ${_CONNECTOR_ID}"
-        echo "BUILD_TAG: ${_BUILD_TAG}"
-        echo "BUILD_ID: ${BUILD_ID}"
         echo "IMAGE_DIGEST: ${_IMAGE_DIGEST}"
         echo "API_ENDPOINT: ${_API_ENDPOINT}"
 
@@ -69,8 +67,7 @@ steps:
           -e IMAGE_NAME="$_IMAGE_NAME_TO_SCAN" \
           -e IMAGE_TAG="$_IMAGE_TAG" \
           -e CONNECTOR_ID="$_CONNECTOR_ID" \
-          -e BUILD_TAG="$_BUILD_TAG" \
-          -e BUILD_ID="$BUILD_ID" \
+          -e TRIGGER_ID="$_TRIGGER_ID" \
           -e GCP_ACCESS_TOKEN="$(cat /workspace/gcp_token.txt)" \
           "$_SCANNER_IMAGE" || exit_code=$?
         
@@ -89,7 +86,7 @@ substitutions:
   _SCANNER_IMAGE: 'gcr.io/ci-plugin/cloud-build-integration:latest'
   _IMAGE_TAG: 'latest'
   _IMAGE_DIGEST: 'sha256:b0c6491f5ba0dff4c919008f5ab48db97315676136c21796e41fb6326e88d02a'
-  _BUILD_TAG: 'cloud-build-job'
+  _TRIGGER_ID: 'cloud-build-job'
   _PROJECT_ID: 'hcp-tf-test-bhargavi'
   
 
