@@ -88,6 +88,13 @@ steps:
     args:
       - '-c'
       - |
+        # Debug: show all variables
+        echo "Substitutions:"
+        echo "_IMAGE_NAME_TO_SCAN=${_IMAGE_NAME_TO_SCAN}"
+        echo "_IMAGE_TAG=${_IMAGE_TAG}"
+        echo "_PROJECT_ID=${_PROJECT_ID}"
+        echo "_AR_REPOSITORY=${_AR_REPOSITORY}"
+
         _LOCAL_IMAGE="${_IMAGE_NAME_TO_SCAN}:${_IMAGE_TAG}"
         _FULL_AR_TAG="us-east1-docker.pkg.dev/${_PROJECT_ID}/${_AR_REPOSITORY}/${_IMAGE_NAME_TO_SCAN}:${_IMAGE_TAG}"
 
@@ -101,14 +108,14 @@ steps:
 
 substitutions:
   _IMAGE_NAME_TO_SCAN: 'alpine'
+  _IMAGE_TAG: 'latest'
+  _PROJECT_ID: 'hcp-tf-test-bhargavi'
+  _AR_REPOSITORY: 'vulnerability-scanning'
   _ORGANIZATION_ID: '714470867684'
   _CONNECTOR_ID: 'cloudbuild-demo'
   _SCANNER_IMAGE: 'gcr.io/ci-plugin/cloud-build-integration:latest'
-  _IMAGE_TAG: 'latest'
-  _IMAGE_DIGEST: 'sha256:b0c6491f5ba0dff4c919008f5ab48db97315676136c21796e41fb6326e88d02a'
+  _IMAGE_DIGEST: 'sha256:b0c6491f5ba0dff4c919008f5ab48db97315676136e41fb6326e88d02a'
   _TRIGGER_ID: 'cloud-build-job'
-  _PROJECT_ID: 'hcp-tf-test-bhargavi'
-  _AR_REPOSITORY: 'vulnerability-scanning'
   _IGNORE_ERRORS: "false"
 
 serviceAccount: "projects/hcp-tf-test-bhargavi/serviceAccounts/461255015551-compute@developer.gserviceaccount.com"
