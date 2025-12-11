@@ -69,7 +69,7 @@ steps:
             echo "❌ Scan failed: Non-conformant image (vulnerabilities found)."
             exit 1 # Fail the step
           else
-            if [ "$IGNORE_ERRORS" = "true" ]; then
+            if [ "$_IGNORE_ERRORS" = "true" ]; then
               echo "⚠️ Server/internal error occurred (Code: $exit_code), but IGNORE_SERVER_ERRORS=true. Proceeding."
             else
               echo "❌ Server/internal error occurred (Code: $exit_code) during evaluation. Set IGNORE_SERVER_ERRORS=true to override."
