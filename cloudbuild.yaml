@@ -32,7 +32,7 @@ steps:
 
   # Step 3: Image scan for vulnerabilities
   - id: 'Image-Analysis'
-    name: '$_SCANNER_IMAGE'
+    name: '${_SCANNER_IMAGE}'
     entrypoint: 'bash'
     args:
       - '-c'
@@ -44,27 +44,25 @@ steps:
         docker run --rm \
           -v /var/run/docker.sock:/var/run/docker.sock \
           -v /workspace:/workspace \
-          -e GCP_PROJECT_ID="$_PROJECT_ID" \
-          -e ORGANIZATION_ID="$_ORGANIZATION_ID" \
-          -e IMAGE_NAME="$_IMAGE_NAME_TO_SCAN" \
-          -e IMAGE_TAG="$_IMAGE_TAG" \
-          -e CONNECTOR_ID="$_CONNECTOR_ID" \
-          -e TRIGGER_ID="$_TRIGGER_ID" \
-          -e IGNORE_ERRORS="$_IGNORE_ERRORS" \
+          -e GCP_PROJECT_ID="${_PROJECT_ID}" \
+          -e ORGANIZATION_ID="${_ORGANIZATION_ID}" \
+          -e IMAGE_NAME="${_IMAGE_NAME_TO_SCAN}" \
+          -e IMAGE_TAG="${_IMAGE_TAG}" \
+          -e CONNECTOR_ID="${_CONNECTOR_ID}" \
+          -e TRIGGER_ID="${_TRIGGER_ID}" \
+          -e IGNORE_ERRORS="${_IGNORE_ERRORS}" \
           -e GCP_ACCESS_TOKEN="$(cat /workspace/gcp_token.txt)" \
-          "$_SCANNER_IMAGE" || exit_code=$?
+          "${_SCANNER_IMAGE}" || exit_code=$?
 
         echo "Docker run finished with exit code: $exit_code"
 
         if [ $exit_code -eq 0 ]; then
           echo "✅ Evaluation succeeded: Conformant image."
-
         elif [ $exit_code -eq 1 ]; then
           echo "❌ Scan failed: Non-conformant image."
           exit 1
-
         else
-          if [ "$_IGNORE_ERRORS" = "true" ]; then
+          if [ "${_IGNORE_ERRORS}" = "true" ]; then
             echo "⚠️ Server/internal error ignored. Continuing."
           else
             echo "❌ Server/internal error. Exiting."
@@ -73,7 +71,7 @@ steps:
         fi
 
   # Step 4: Push image to Artifact Registry
-  - name: 'gcr.io/cloud-builders/docker'
+  - name: 'gcr.io/cloud-builders/gcloud'
     id: 'Push Image to Artifact Registry'
     entrypoint: 'bash'
     args:
