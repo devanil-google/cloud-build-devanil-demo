@@ -51,6 +51,7 @@ steps:
         echo "Starting image scan for: ${_IMAGE_NAME_TO_SCAN}:${_IMAGE_TAG}"
         exit_code=0
         docker run --rm \
+          -v /var/run/docker.sock:/var/run/docker.sock
           -v /workspace:/workspace \
           -e GCP_PROJECT_ID="${_PROJECT_ID}" \
           -e ORGANIZATION_ID="${_ORGANIZATION_ID}" \
