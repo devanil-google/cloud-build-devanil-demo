@@ -1,7 +1,7 @@
 steps:
   # Step 1: Generate auth token
   - name: 'gcr.io/cloud-builders/gcloud'
-    id: 'Generate Token.'
+    id: 'Generate Token'
     entrypoint: 'bash'
     args:
       - '-c'
@@ -15,7 +15,7 @@ steps:
           exit 1
         fi
 
-  # Step 2: Build the image locally.
+  # Step 2: Build the image locally
   - name: 'gcr.io/cloud-builders/docker'
     id: 'Build Image'
     entrypoint: 'bash'
@@ -30,7 +30,7 @@ steps:
         fi
         echo "✅ Docker image built successfully: ${_IMAGE_NAME_TO_SCAN}:${_IMAGE_TAG}"
 
-  # Step 3: Image scan for vulnerabilities.
+  # Step 3: Image scan for vulnerabilities
   - id: 'Image-Analysis'
     name: '$_SCANNER_IMAGE'
     entrypoint: 'bash'
@@ -72,7 +72,7 @@ steps:
           fi
         fi
 
-  # Step 4: Push image to Artifact Registry (only runs if scan step succeeds)
+  # Step 4: Push image to Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
     id: 'Push Image to Artifact Registry'
     entrypoint: 'bash'
@@ -81,17 +81,17 @@ steps:
       - |
         echo "📦 Preparing to push image to Artifact Registry..."
 
-        LOCAL_IMAGE_NAME="${_IMAGE_NAME_TO_SCAN}:${_IMAGE_TAG}"
-        FULL_AR_TAG="us-east1-docker.pkg.dev/${_PROJECT_ID}/${_AR_REPOSITORY}/${_IMAGE_NAME_TO_SCAN}:${_IMAGE_TAG}"
+        _LOCAL_IMAGE="${_IMAGE_NAME_TO_SCAN}:${_IMAGE_TAG}"
+        _FULL_AR_TAG="us-east1-docker.pkg.dev/${_PROJECT_ID}/${_AR_REPOSITORY}/${_IMAGE_NAME_TO_SCAN}:${_IMAGE_TAG}"
 
-        echo "Tagging local image $LOCAL_IMAGE_NAME as $FULL_AR_TAG"
-        docker tag "$LOCAL_IMAGE_NAME" "$FULL_AR_TAG"
+        echo "Tagging local image $_LOCAL_IMAGE as $_FULL_AR_TAG"
+        docker tag "$_LOCAL_IMAGE" "$_FULL_AR_TAG"
 
         echo "🔐 Authenticating Docker to Artifact Registry..."
         gcloud auth configure-docker us-east1-docker.pkg.dev -q
 
-        echo "🚀 Pushing $FULL_AR_TAG..."
-        docker push "$FULL_AR_TAG"
+        echo "🚀 Pushing $_FULL_AR_TAG..."
+        docker push "$_FULL_AR_TAG"
 
         echo "✅ Image pushed successfully."
 
