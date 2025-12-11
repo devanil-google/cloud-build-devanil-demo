@@ -86,7 +86,7 @@ substitutions:
   _IMAGE_DIGEST: 'sha256:b0c6491f5ba0dff4c919008f5ab48db97315676136c21796e41fb6326e88d02a'
   _TRIGGER_ID: 'cloud-build-job'
   _PROJECT_ID: 'hcp-tf-test-bhargavi'
-  _IGNORE_ERRORS: false
+  _IGNORE_ERRORS: "false"
   
 serviceAccount: "projects/hcp-tf-test-bhargavi/serviceAccounts/461255015551-compute@developer.gserviceaccount.com"
 options:
