@@ -1,8 +1,99 @@
-# In your cloudbuild.yaml
 steps:
-  - name: 'alpine'
-    args: ['echo', 'Logs are streamed only to Cloud Logging.']
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'Generate Token - Auth testing'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "Starting token generation..."
+        gcloud auth print-access-token > /workspace/gcp_token.txt
+        if [ $? -eq 0 ]; then
+          echo "Token generated successfully."
+        else
+          echo "Failed to generate token." >&2
+          exit 1
+        fi
 
-# ADD THIS:
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'Build Image'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "🚧 Building Docker image from source code..."
+        docker build -t ${_IMAGE_NAME_TO_SCAN}:${_IMAGE_TAG} .
+        if [ $? -ne 0 ]; then
+          echo "❌ Docker build failed."
+          exit 1
+        fi
+        echo "✅ Docker image built successfully: built-image:${_IMAGE_TAG}"
+
+  # Step 2: Authenticate with Google Cloud using the generated token
+  - name: 'gcr.io/cloud-builders/gcloud'
+    id: 'Authenticate With Google Cloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "Activating service account with token..."
+        # Ensure the access token is available in the environment
+        export GCP_ACCESS_TOKEN=$(cat /workspace/gcp_token.txt)
+        echo "Access token ready for use in subsequent steps."
+
+  # Step 3: Image Analysis - Docker Scan or other processing
+  - id: 'Image-Analysis'
+    name: '$_SCANNER_IMAGE'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "Starting image scan with image: ${_SCANNER_IMAGE}"
+        echo "Substituting environment variables:"
+        echo "PROJECT_ID: $PROJECT_ID"
+        echo "ORGANIZATION_ID: ${_ORGANIZATION_ID}"
+        echo "IMAGE_NAME_TO_SCAN: ${_IMAGE_NAME_TO_SCAN}"
+        echo "IMAGE_TAG: ${_IMAGE_TAG}"
+        echo "CONNECTOR_ID: ${_CONNECTOR_ID}"
+        echo "BUILD_TAG: ${_BUILD_TAG}"
+        echo "BUILD_ID: ${BUILD_ID}"
+        echo "IMAGE_DIGEST: ${_IMAGE_DIGEST}"
+        echo "API_ENDPOINT: ${_API_ENDPOINT}"
+
+        echo "Running docker command..."
+        exit_code=0
+        docker run --rm \
+          -v /var/run/docker.sock:/var/run/docker.sock \
+          -v /workspace:/workspace \
+          -e GCP_PROJECT_ID="$_PROJECT_ID" \
+          -e ORGANIZATION_ID="$_ORGANIZATION_ID" \
+          -e IMAGE_NAME="$_IMAGE_NAME_TO_SCAN" \
+          -e IMAGE_TAG="$_IMAGE_TAG" \
+          -e CONNECTOR_ID="$_CONNECTOR_ID" \
+          -e BUILD_TAG="$_BUILD_TAG" \
+          -e BUILD_ID="$BUILD_ID" \
+          -e IMAGE_DIGEST="$_IMAGE_DIGEST" \
+          -e GCP_ACCESS_TOKEN="$(cat /workspace/gcp_token.txt)" \
+          "$_SCANNER_IMAGE" || exit_code=$?
+        
+        echo "Docker run finished with exit code: $exit_code"
+        if [ $exit_code -eq 0 ]; then
+          echo "Image scan completed successfully."
+        else
+          echo "Image scan failed with exit code $exit_code." >&2
+          exit 1
+        fi
+
+substitutions:
+  _IMAGE_NAME_TO_SCAN: 'alpine'
+  _ORGANIZATION_ID: '978806944881'
+  _CONNECTOR_ID: 'connector-id-3'
+  _SCANNER_IMAGE: 'gcr.io/ci-plugin/cloud-build-integration:latest'
+  _IMAGE_TAG: 'latest'
+  _IMAGE_DIGEST: 'sha256:b0c6491f5ba0dff4c919008f5ab48db97315676136c21796e41fb6326e88d02a'
+  _BUILD_TAG: 'cloud-build-job'
+  _PROJECT_ID: 'hcp-tf-test-bhargavi'
+  
+
+serviceAccount: "projects/hcp-tf-test-bhargavi/serviceAccounts/461255015551-compute@developer.gserviceaccount.com"
 options:
-  logging: CLOUD_LOGGING_ONLY
+  logging: CLOUD_LOGGING_ONLY  # Logs only in Cloud Logging, no GCS bucket needed
